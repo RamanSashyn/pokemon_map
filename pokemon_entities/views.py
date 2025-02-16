@@ -108,6 +108,21 @@ def show_pokemon(request, pokemon_id):
 
     folium_map = folium.Map(location=MOSCOW_CENTER, zoom_start=12)
 
+    current_time = localtime()
+    active_pokemon_entities = PokemonEntity.objects.filter(
+        pokemon=pokemon,
+        appeared_at__lte=current_time,
+        disappeared_at__gte=current_time
+    )
+
+    for entity in active_pokemon_entities:
+        add_pokemon(
+            folium_map,
+            entity.lat,
+            entity.lon,
+            pokemon_info['img_url']
+        )
+
     return render(request, 'pokemon.html', context={
         'map': folium_map._repr_html_(),
         'pokemon': pokemon_info
