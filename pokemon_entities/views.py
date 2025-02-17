@@ -3,11 +3,10 @@ import json
 
 from django.http import HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404
-
 from django.templatetags.static import static
-from .models import Pokemon, PokemonEntity
 from django.utils.timezone import localtime
 
+from .models import Pokemon, PokemonEntity
 
 MOSCOW_CENTER = [55.751244, 37.618423]
 DEFAULT_IMAGE_URL = (
@@ -15,6 +14,7 @@ DEFAULT_IMAGE_URL = (
     '/latest/fixed-aspect-ratio-down/width/240/height/240?cb=20130525215832'
     '&fill=transparent'
 )
+DEFAULT_POKEMON_IMAGE = 'default_pokemon.png'
 
 
 def add_pokemon(folium_map, lat, lon, image_url=DEFAULT_IMAGE_URL):
@@ -57,16 +57,20 @@ def show_all_pokemons(request):
 
     for entity in active_pokemons:
         add_pokemon(
-            folium_map, entity.lat, entity.lon,
-            request.build_absolute_uri(entity.pokemon.photo.url) if entity.pokemon.photo else static(
-                'default_pokemon.png')
+            folium_map,
+            entity.lat,
+            entity.lon,
+            request.build_absolute_uri(entity.pokemon.photo.url)
+            if entity.pokemon.photo
+            else static(DEFAULT_POKEMON_IMAGE)
         )
 
     pokemons_on_page = [
         {
             'pokemon_id': pokemon.id,
-            'img_url': request.build_absolute_uri(pokemon.photo.url) if pokemon.photo else static(
-                'default_pokemon.png'),
+            'img_url': request.build_absolute_uri(pokemon.photo.url)
+            if pokemon.photo
+            else static(DEFAULT_POKEMON_IMAGE),
             'title_ru': pokemon.title,
         }
         for pokemon in Pokemon.objects.all()
@@ -86,7 +90,9 @@ def show_pokemon(request, pokemon_id):
         'title_en': pokemon.title_en or '',
         'title_jp': pokemon.title_jp or '',
         'description': pokemon.description,
-        'img_url': request.build_absolute_uri(pokemon.photo.url) if pokemon.photo else static('default_pokemon.png'),
+        'img_url': request.build_absolute_uri(pokemon.photo.url)
+        if pokemon.photo
+        else static(DEFAULT_POKEMON_IMAGE),
     }
 
     if pokemon.previous_evolution:
@@ -94,8 +100,8 @@ def show_pokemon(request, pokemon_id):
             'title_ru': pokemon.previous_evolution.title,
             'pokemon_id': pokemon.previous_evolution.id,
             'img_url': request.build_absolute_uri(
-                pokemon.previous_evolution.photo.url) if pokemon.previous_evolution.photo else static(
-                'default_pokemon.png'),
+                pokemon.previous_evolution.photo.url
+            ) if pokemon.previous_evolution.photo else static(DEFAULT_POKEMON_IMAGE),
         }
 
     next_evolution = Pokemon.objects.filter(previous_evolution=pokemon).first()
@@ -104,13 +110,14 @@ def show_pokemon(request, pokemon_id):
         pokemon_info['next_evolution'] = {
             'title_ru': next_evolution.title,
             'pokemon_id': next_evolution.id,
-            'img_url': request.build_absolute_uri(next_evolution.photo.url) if next_evolution.photo else static(
-                'default_pokemon.png'),
+            'img_url': request.build_absolute_uri(
+                next_evolution.photo.url
+            ) if next_evolution.photo else static(DEFAULT_POKEMON_IMAGE),
         }
 
     folium_map = folium.Map(location=MOSCOW_CENTER, zoom_start=12)
-
     current_time = localtime()
+
     active_pokemon_entities = PokemonEntity.objects.filter(
         pokemon=pokemon,
         appeared_at__lte=current_time,
