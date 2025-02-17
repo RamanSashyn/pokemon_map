@@ -98,7 +98,8 @@ def show_pokemon(request, pokemon_id):
                 'default_pokemon.png'),
         }
 
-    next_evolution = pokemon.next_evolutions.first()
+    next_evolution = Pokemon.objects.filter(previous_evolution=pokemon).first()
+
     if next_evolution:
         pokemon_info['next_evolution'] = {
             'title_ru': next_evolution.title,
